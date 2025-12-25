@@ -1,5 +1,4 @@
 import { PiArrowArcLeftBold, PiArrowArcRightBold } from "react-icons/pi";
-import { VscSettings } from "react-icons/vsc";
 import { FiPlus } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo } from "react";
