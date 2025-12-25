@@ -23,9 +23,6 @@ export const connectDB = async () => {
     await sequelize.authenticate();
     console.log("Database connection established.");
 
-    // 3. Optional: Sync models (Creates tables if they don't exist)
-    // await sequelize.sync({ alter: true });
-
     return sequelize;
   } catch (error) {
     console.error("Database connection failed:", error);
