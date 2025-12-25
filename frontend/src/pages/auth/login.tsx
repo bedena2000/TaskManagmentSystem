@@ -1,153 +1,178 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getFieldError } from "@/helpers";
-import { signIn, signUp } from "@/queries";
-import type { RegistrationErrorMessageInterface } from "@/types";
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import { useState } from "react";
-import { ColorRing } from "react-loader-spinner";
-import { Link, useNavigate } from "react-router-dom";
+import { signIn } from "@/queries";
+import { type RegistrationErrorMessageInterface } from "@/types";
+import { Loader2, Mail, Lock, ChevronRight } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
-
-  const [serverError, setServerError] = useState<string | null>(null);
   const [loginErrors, setLoginErrors] = useState<
-    RegistrationErrorMessageInterface[] | []
+    RegistrationErrorMessageInterface[]
   >([]);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
-  const { mutate, isPending, error } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: signIn,
     onSuccess: (data) => {
-      setServerError(null);
-      setLoginErrors([]);
-
       localStorage.setItem("token", data.token);
-
       navigate("/dashboard");
     },
     onError: (error) => {
       if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
         const message = error.response?.data?.message;
-        const errorsArray: RegistrationErrorMessageInterface[] =
-          error.response?.data?.errors;
-
+        const errorsArray = error.response?.data?.errors || [];
         setLoginErrors(errorsArray);
-
-        // if (errorsArray.length === 0 && message) {
-        //   setLoginErrors([{ field: "password", message }]);
-        // } else {
-        //   setLoginErrors(errorsArray);
-        // }
-        if (message === "Password is incorrect") {
-          setPasswordErrorMessage(message);
-        }
-
-        if (status && status < 500) {
-          setServerError(message);
-          return;
-        }
+        setServerError(message || "Login failed");
+      } else {
+        navigate("/404");
       }
-
-      navigate("/404");
     },
   });
 
-  const handleLogin = () => {
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
     setServerError(null);
     mutate({ email, password });
   };
 
-  console.log(passwordErrorMessage);
-
   return (
-    <div className="min-h-screen grid gap-4 grid-cols-12">
-      <div className="col-span-5 p-24">
-        <div className="mt-18">
-          <div className="flex flex-col gap-2.5">
-            <p className="text-[#040308] text-2xl font-bold">Login</p>
-            <p>
-              Dont have an account?{" "}
-              <span>
-                <Link className="text-[#312ECB]" to="/registration">
-                  Register
-                </Link>
-              </span>
+    <div className="min-h-screen flex bg-white">
+      {/* Left Side: Form */}
+      <div className="flex-[0.4] flex flex-col justify-center px-12 lg:px-24">
+        <div className="max-w-sm w-full mx-auto">
+          {/* Logo/Branding */}
+          <div className="mb-10">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl mb-4 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-200">
+              T
+            </div>
+            <h1 className="text-3xl font-bold text-neutral-900">
+              Welcome back
+            </h1>
+            <p className="text-neutral-500 mt-2">
+              New here?{" "}
+              <Link
+                to="/registration"
+                className="text-blue-600 font-semibold hover:underline"
+              >
+                Create an account
+              </Link>
             </p>
           </div>
 
-          <div className="flex flex-col gap-4 mt-6">
-            <Input
-              value={email}
-              onChange={(item) => setEmail(item.target.value)}
-              type="email"
-              placeholder="Email"
-            />
-            {getFieldError("email", loginErrors) && (
-              <p className="text-sm text-red-600 mt-1">
-                {getFieldError("email", loginErrors)}
-              </p>
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Server-wide Error Alert */}
+            {serverError && !loginErrors.length && (
+              <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
+                {serverError}
+              </div>
             )}
-            <Input
-              value={password}
-              onChange={(item) => setPassword(item.target.value)}
-              type="password"
-              placeholder="Password"
-            />
 
-            {getFieldError("password", loginErrors) && (
-              <p className="text-sm text-red-600 mt-1">
-                {getFieldError("password", loginErrors)}
-              </p>
-            )}
-            {passwordErrorMessage && (
-              <p className="text-sm text-red-600 mt-1">
-                {passwordErrorMessage}
-              </p>
-            )}
-          </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-neutral-700 ml-1">
+                Email
+              </label>
+              <div className="relative">
+                <Mail
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                  size={18}
+                />
+                <Input
+                  className="pl-10 h-12 rounded-xl bg-neutral-50 border-neutral-200 focus:bg-white transition-all"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  placeholder="name@company.com"
+                  required
+                />
+              </div>
+              {getFieldError("email", loginErrors) && (
+                <p className="text-xs text-red-500 ml-1">
+                  {getFieldError("email", loginErrors)}
+                </p>
+              )}
+            </div>
 
-          <div className="mt-11">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-neutral-700 ml-1">
+                Password
+              </label>
+              <div className="relative">
+                <Lock
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"
+                  size={18}
+                />
+                <Input
+                  className="pl-10 h-12 rounded-xl bg-neutral-50 border-neutral-200 focus:bg-white transition-all"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              {getFieldError("password", loginErrors) && (
+                <p className="text-xs text-red-500 ml-1">
+                  {getFieldError("password", loginErrors)}
+                </p>
+              )}
+            </div>
+
             <Button
-              onClick={handleLogin}
-              className="w-full cursor-pointer"
+              type="submit"
               disabled={isPending}
+              className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg shadow-blue-100 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             >
               {isPending ? (
-                <ColorRing
-                  visible={true}
-                  height={100}
-                  width={100}
-                  colors={[
-                    "#e15b64",
-                    "#f47e60",
-                    "#f8b26a",
-                    "#abbd81",
-                    "#849b87",
-                  ]}
-                />
+                <Loader2 className="animate-spin" size={20} />
               ) : (
-                "Login"
+                <>
+                  Sign in <ChevronRight size={18} />
+                </>
               )}
             </Button>
-          </div>
+          </form>
+
+          <p className="mt-8 text-center text-xs text-neutral-400">
+            By signing in, you agree to our Terms of Service.
+          </p>
         </div>
       </div>
 
-      <div className="bg-[#040308] col-span-7 relative overflow-hidden text-white p-24 flex flex-col justify-between">
+      {/* Right Side: Visual/Marketing */}
+      <div className="hidden lg:flex flex-[0.6] bg-[#0A0A0B] m-4 rounded-[2.5rem] p-16 flex-col justify-between relative overflow-hidden text-white">
+        {/* Background Decorative Blobs */}
+        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px]" />
+
         <div className="z-10">
-          <p className="text-4xl ">Task management system</p>
+          <p className="text-sm font-medium tracking-[0.2em] text-blue-400 uppercase">
+            Task Management 2.0
+          </p>
+          <h2 className="text-5xl font-bold mt-6 leading-tight max-w-lg">
+            Streamline your workflow in seconds.
+          </h2>
         </div>
 
-        <div className="z-10 flex flex-col gap-4">
-          <p className="text-2xl">Create your projects and tasks</p>
-          <p>Authenticate then have your notes, projects for your daily work</p>
+        <div className="z-10 max-w-md">
+          <div className="bg-white/5 backdrop-blur-lg border border-white/10 p-6 rounded-3xl mb-8">
+            <p className="text-lg text-neutral-300 italic">
+              "This system has completely transformed how our team handles
+              sprints. It's intuitive, fast, and beautiful."
+            </p>
+            <p className="mt-4 font-semibold">— Sarah Jenkins, Product Lead</p>
+          </div>
+          <p className="text-neutral-400">
+            Authenticate to access your workspace, notes, and daily project
+            timelines.
+          </p>
         </div>
       </div>
     </div>
